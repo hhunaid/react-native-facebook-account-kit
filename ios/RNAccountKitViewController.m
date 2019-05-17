@@ -31,14 +31,20 @@
 - (void)_prepareLoginViewController:(UIViewController<AKFViewController> *)viewController
 {
     viewController.delegate = self;
-    if(self.theme != nil) {
-        viewController.theme = self.theme;
+    if (self.advancedUIManager != nil) {
+        viewController.uiManager = self.advancedUIManager;
     }
     if (self.countryWhitelist != nil) {
         viewController.whitelistedCountryCodes = self.countryWhitelist;
     }
     if (self.countryBlacklist != nil) {
         viewController.blacklistedCountryCodes = self.countryBlacklist;
+    }
+    if (self.facebookNotificationsEnabled == YES) {
+        viewController.enableSendToFacebook = self.facebookNotificationsEnabled;
+    }
+    if (self.getACallEnabled == YES) {
+        viewController.enableGetACall = self.getACallEnabled;
     }
     viewController.defaultCountryCode = self.defaultCountry;
     viewController.enableSendToFacebook = YES;
@@ -58,8 +64,13 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController<AKFViewController> *viewController = [self->_accountKit viewControllerForPhoneLoginWithPhoneNumber:prefillPhoneNumber state:inputState];
         [self _prepareLoginViewController:viewController];
+        
         UIViewController *rootViewController = [self topMostViewController];
-        [rootViewController presentViewController:viewController animated:YES completion:NULL];
+        if([_viewControllerMode isEqualToString:@"present"]) {
+          [rootViewController presentViewController:viewController animated:YES completion:nil];
+        } else if ([_viewControllerMode isEqualToString:@"show"]) {
+          [rootViewController showViewController:viewController sender:nil];
+        }
     });
 }
 
@@ -74,8 +85,13 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         UIViewController<AKFViewController> *viewController = [self->_accountKit viewControllerForEmailLoginWithEmail:prefillEmail state:inputState];
         [self _prepareLoginViewController:viewController];
+
         UIViewController *rootViewController = [self topMostViewController];
-        [rootViewController presentViewController:viewController animated:YES completion:NULL];
+        if([_viewControllerMode isEqualToString:@"present"]) {
+          [rootViewController presentViewController:viewController animated:YES completion:nil];
+        } else if ([_viewControllerMode isEqualToString:@"show"]) {
+          [rootViewController showViewController:viewController sender:nil];
+        }
     });
 }
 

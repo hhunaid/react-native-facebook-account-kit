@@ -111,12 +111,16 @@ public class RNAccountKitModule extends ReactContextBaseJavaModule implements Ac
 
         this.pendingPromise = promise;
 
-        final LoginType loginType = LoginType.valueOf(type.toUpperCase());
+        final LoginType loginType = LoginType.valueOf(safeString(type.toUpperCase()));
         final Intent intent = new Intent(this.reactContext.getApplicationContext(), AccountKitActivity.class);
         final AccountKitConfiguration.AccountKitConfigurationBuilder configurationBuilder =
             createAccountKitConfiguration(loginType);
         intent.putExtra(AccountKitActivity.ACCOUNT_KIT_ACTIVITY_CONFIGURATION, configurationBuilder.build());
-        this.reactContext.startActivityForResult(intent, APP_REQUEST_CODE, new Bundle());
+        try {
+            this.reactContext.startActivityForResult(intent, APP_REQUEST_CODE, new Bundle());
+        } catch (Error e) {
+            rejectPromise("error", new Error("Login aborted"));
+        }
     }
 
     @ReactMethod
@@ -204,12 +208,12 @@ public class RNAccountKitModule extends ReactContextBaseJavaModule implements Ac
     private AccountKitConfiguration.AccountKitConfigurationBuilder createAccountKitConfiguration(
         final LoginType loginType) {
         AccountKitConfiguration.AccountKitConfigurationBuilder configurationBuilder =
-            new AccountKitConfiguration.AccountKitConfigurationBuilder(loginType,
-                AccountKitActivity.ResponseType.valueOf(
-                    this.options.getString("responseType").toUpperCase()));
+                new AccountKitConfiguration.AccountKitConfigurationBuilder(loginType,
+                        AccountKitActivity.ResponseType.valueOf(
+                                safeString(this.options.getString("responseType").toUpperCase())));
 
         configurationBuilder.setTitleType(
-            AccountKitActivity.TitleType.valueOf(this.options.getString("titleType").toUpperCase()));
+                AccountKitActivity.TitleType.valueOf(safeString(this.options.getString("titleType").toUpperCase())));
 
         String initialAuthState = this.options.getString(("initialAuthState"));
         if (!initialAuthState.isEmpty()) {
@@ -223,10 +227,9 @@ public class RNAccountKitModule extends ReactContextBaseJavaModule implements Ac
 
         String initialPhoneCountryPrefix = this.options.getString("initialPhoneCountryPrefix");
         String initialPhoneNumber = this.options.getString("initialPhoneNumber");
-        if (initialPhoneCountryPrefix != null && !initialPhoneCountryPrefix.isEmpty() && initialPhoneNumber != null && !initialPhoneNumber.isEmpty()) {
-            PhoneNumber phoneNumber = new PhoneNumber(initialPhoneCountryPrefix, initialPhoneNumber, null);
-            configurationBuilder.setInitialPhoneNumber(phoneNumber);
-        }
+
+        PhoneNumber phoneNumber = new PhoneNumber(initialPhoneCountryPrefix, initialPhoneNumber, null);
+        configurationBuilder.setInitialPhoneNumber(phoneNumber);
 
         configurationBuilder.setFacebookNotificationsEnabled(
             this.options.getBoolean("facebookNotificationsEnabled"));
@@ -364,5 +367,10 @@ public class RNAccountKitModule extends ReactContextBaseJavaModule implements Ac
     }
 
     public void onNewIntent(Intent intent) {
+    }
+
+    //  Replace Turkish İ and ı with their normalized versions (I and i, respectively)
+    private String safeString (String str) {
+      return str.replace("İ", "I").replace("ı", "i");
     }
 }

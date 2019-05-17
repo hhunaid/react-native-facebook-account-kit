@@ -2,6 +2,7 @@
 //  RNAccountKit.m
 //
 
+#import "RNAccountKitAdvancedUIManager.h"
 #import "RNAccountKit.h"
 #import <React/RCTBridge.h>
 #import "RNAccountKitViewController.h"
@@ -22,7 +23,7 @@ RCT_EXPORT_METHOD(login:(NSString *)type
 {
     @try {
         RNAccountKitViewController* a = [[RNAccountKitViewController alloc] initWithAccountKit: [self getAccountKit]];
-        a.theme = [self getTheme];
+        a.advancedUIManager = [self getAdvancedUIManager];
         a.countryWhitelist = [self.options valueForKey:@"countryWhitelist"];
         a.countryBlacklist = [self.options valueForKey:@"countryBlacklist"];
         a.defaultCountry = [self.options valueForKey:@"defaultCountry"];
@@ -30,6 +31,24 @@ RCT_EXPORT_METHOD(login:(NSString *)type
         a.initialPhoneCountryPrefix = [self.options valueForKey:@"initialPhoneCountryPrefix"];
         a.initialPhoneNumber = [self.options valueForKey:@"initialPhoneNumber"];
 
+        if ([self.options valueForKey:@"viewControllerMode"]) {
+          a.viewControllerMode = [self.options valueForKey:@"viewControllerMode"];
+        } else {
+          a.viewControllerMode = @"present";
+        }
+        
+        if ([[self.options valueForKey:@"facebookNotificationsEnabled"] boolValue] == YES) {
+            a.facebookNotificationsEnabled = YES;
+        } else {
+            a.facebookNotificationsEnabled = NO;
+        }
+        
+        if ([[self.options valueForKey:@"getACallEnabled"] boolValue] == YES) {
+            a.getACallEnabled = YES;
+        } else {
+            a.getACallEnabled = NO;
+        }
+        
         if ([type isEqual: @"phone"]) {
             [a loginWithPhone: resolve rejecter: reject];
         } else {
@@ -106,11 +125,11 @@ RCT_EXPORT_METHOD(getCurrentAccount: (RCTPromiseResolveBlock)resolve
 }
 
 - (AKFTheme *)getTheme {
-    AKFTheme *theme = [AKFTheme defaultTheme];
     NSDictionary *themeOptions = [self.options objectForKey:@"theme"];
     if(themeOptions == nil) {
-      return theme;
+      return nil;
     }
+    AKFTheme *theme = [AKFTheme defaultTheme];
     NSArray *colorOptions = @[@"backgroundColor",
                               @"headerBackgroundColor",@"headerTextColor",@"headerButtonTextColor",
                               @"buttonBackgroundColor",@"buttonBorderColor",@"buttonTextColor",
@@ -139,6 +158,14 @@ RCT_EXPORT_METHOD(getCurrentAccount: (RCTPromiseResolveBlock)resolve
         }
     }
     return theme;
+}
+
+- (RNAccountKitAdvancedUIManager*) getAdvancedUIManager {
+    AKFTheme *theme = [self getTheme];
+    if (theme == nil) {
+        return nil;
+    }
+    return [[RNAccountKitAdvancedUIManager alloc] initWithTheme:theme];
 }
 
 - (AKFAccountKit*) getAccountKit
